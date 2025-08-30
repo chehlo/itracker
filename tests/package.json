@@ -4,18 +4,25 @@
   "description": "Infrastructure and integration tests",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:infrastructure": "jest infrastructure/",
-    "test:verbose": "jest --verbose",
-    "test:silent": "jest --silent"
+    "test": "jest --runInBand --verbose",
+    "test:watch": "jest --watch --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
+    "test:env": "jest infrastructure/environment.test.js --runInBand",
+    "test:db": "jest infrastructure/database.test.js --runInBand",
+    "test:verbose": "jest --verbose --runInBand",
+    "test:silent": "jest --silent --runInBand"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "@types/jest": "^29.5.0",
-    "pg": "^8.11.0",
-    "jest-extended": "^4.0.0",
-    "jest-junit": "^16.0.0"
+    "@types/jest": "^29.5.12",
+    "pg": "^8.12.0",
+    "jest-extended": "^4.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "overrides": {
+    "inflight": "npm:@npmcli/promise-spawn@^7.0.0",
+    "glob": "^10.3.0"
   }
 }
