@@ -1,0 +1,29 @@
+# Test artifacts and generated files
+/tests/node_modules/
+/tests/coverage/
+/tests/junit.xml
+
+# Environment files with secrets (NOT the .example template)
+/tests/.env
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Jest cache
+/tests/.jest/
+
+# Environment and Docker volumes  
+/environment/postgres_data/
+/environment/.env.local
+
+# IDE and OS files
+.vscode/
+.DS_Store
+*.swp
+*.swo
+
+# Node.js general
+node_modules/
+npm-debug.log*

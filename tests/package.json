@@ -1,0 +1,21 @@
+{
+  "name": "investment-tracker-tests",
+  "version": "1.0.0",
+  "description": "Infrastructure and integration tests",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:infrastructure": "jest infrastructure/",
+    "test:verbose": "jest --verbose",
+    "test:silent": "jest --silent"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0",
+    "pg": "^8.11.0",
+    "jest-extended": "^4.0.0",
+    "jest-junit": "^16.0.0"
+  }
+}
