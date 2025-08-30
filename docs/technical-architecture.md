@@ -11,8 +11,6 @@
   - Easy deployment options
   - Good TypeScript support for coming from C background
 
-**Alternative**: Vue.js (simpler learning curve but smaller ecosystem)
-
 ### Backend
 **Recommendation: Node.js with Express**
 - **Rationale**:
@@ -20,8 +18,6 @@
   - Extensive package ecosystem
   - Great API development tools
   - Easy integration with frontend
-
-**Alternative**: Python FastAPI (leverages your Python experience but adds language switching complexity)
 
 ### Database
 **Recommendation: PostgreSQL**
@@ -31,19 +27,25 @@
   - Strong consistency guarantees for financial calculations
   - Great free hosting options
 
-**Alternative**: SQLite for development, migrate to PostgreSQL for production
-
 ### Authentication
 **Recommendation: NextAuth.js**
 - Google OAuth integration
 - Session management
 - Built for Next.js ecosystem
 
+### Caching Layer
+**Recommendation: Redis**
+- **Rationale**:
+  - Fast data retrieval for portfolio calculations
+  - Price data caching for performance
+  - Session management
+  - Background job coordination
+
 ### Hosting & Deployment
 **Phase 1**: Local development with Docker
 **Phase 2**: Cloud deployment (Vercel for frontend, Railway/Render for backend)
 
-## Architecture Overview
+## Enhanced Architecture Overview
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -52,273 +54,193 @@
 │                 │    │                 │    │                 │
 │ - React UI      │    │ - REST API      │    │ - User Data     │
 │ - Auth Pages    │    │ - Auth Handling │    │ - Investments   │
-│ - Dashboard     │    │ - Price Feeds   │    │ - Transactions  │
-│ - Forms         │    │ - Calculations  │    │ - Price History │
+│ - Dashboard     │    │ - Multi-Market  │    │ - Transactions  │
+│ - Family Sharing│    │ - Price Feeds   │    │ - Permissions   │
+│ - Multi-language│    │ - Calculations  │    │ - Price History │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       
-         │                       │                       
-┌─────────────────┐    ┌─────────────────┐              
-│ External APIs   │    │   File Storage  │              
-│                 │    │   (Optional)    │              
-│ - Price Data    │    │ - Backups       │              
-│ - Currency      │    │ - Documents     │              
-│ - Market Data   │    │                 │              
-└─────────────────┘    └─────────────────┘              
+         │                       │                       │
+         │                       │                       │
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ External APIs   │    │   Cache Layer   │    │   Background    │
+│                 │    │   (Redis)       │    │   Jobs          │
+│ - US Markets    │    │ - Price Cache   │    │ - Price Updates │
+│ - Israeli Mkts  │    │ - Portfolio     │    │ - Calculations  │
+│ - Currency Rates│    │ - User Sessions │    │ - Cache Refresh │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## Database Schema (Initial Design)
+## Core Architectural Principles
 
-### Core Entities
+### 1. Multi-Market Support
+- **Architecture**: Pluggable price provider system
+- **Markets**: US (Alpha Vantage), Israeli (Funder.co.il, TASE), Manual entry
+- **Currencies**: NIS, USD with currency exposure tracking
+- **Data Sources**: API-based for public markets, manual for alternatives
+
+### 2. Family Access Control
+- **Permission Model**: Private, Family Read, Family Write per portfolio
+- **Family Groups**: Link users for shared portfolio access
+- **Data Isolation**: Strong user-based data separation with controlled sharing
+
+### 3. Performance-First Design
+- **Caching Strategy**: Multi-layer (Memory → Redis → Database → Fresh)
+- **Response Philosophy**: Show cached data immediately, update in background
+- **Cache Invalidation**: Smart invalidation based on data freshness requirements
+- **Graceful Degradation**: Always show something, even if stale
+
+### 4. Data Integrity & Safety
+- **Transactional Operations**: Database transactions for multi-step operations
+- **Audit Trail**: Track all changes to financial data
+- **Backup Strategy**: Regular automated backups
+- **Validation**: Server-side validation for all financial calculations
+
+## Database Schema Architecture
+
+### Core Entities (High-Level)
 
 ```sql
--- Users table
-users (
-    id UUID PRIMARY KEY,
-    google_id VARCHAR UNIQUE,
-    email VARCHAR,
-    name VARCHAR,
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-)
+-- User Management & Family Sharing
+users, family_groups, portfolio_permissions
 
--- Investment types and categories
-investment_types (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR, -- 'public_market', 'alternative', 'recurring'
-    description TEXT
-)
+-- Investment Tracking
+portfolios, investments, transactions, price_history
 
--- Main investments table
-investments (
-    id UUID PRIMARY KEY,
-    user_id UUID REFERENCES users(id),
-    name VARCHAR,
-    symbol VARCHAR, -- For public investments
-    investment_type_id INTEGER REFERENCES investment_types(id),
-    base_currency VARCHAR(3), -- NIS, USD, EUR
-    exposure_currency VARCHAR(3), -- Currency exposure
-    market_region VARCHAR, -- Future use
-    created_at TIMESTAMP,
-    updated_at TIMESTAMP
-)
+-- Market Data & Caching
+exchange_rates, cache_status, price_providers
 
--- All transactions (buy, sell, dividend, contribution, value_update)
-transactions (
-    id UUID PRIMARY KEY,
-    investment_id UUID REFERENCES investments(id),
-    transaction_type VARCHAR, -- 'buy', 'sell', 'dividend', 'contribution', 'manual_update'
-    quantity DECIMAL,
-    price_per_unit DECIMAL,
-    total_amount DECIMAL,
-    currency VARCHAR(3),
-    transaction_date DATE,
-    notes TEXT,
-    created_at TIMESTAMP
-)
-
--- Price history for automated tracking
-price_history (
-    id UUID PRIMARY KEY,
-    investment_id UUID REFERENCES investments(id),
-    price DECIMAL,
-    currency VARCHAR(3),
-    price_date DATE,
-    source VARCHAR, -- 'manual', 'api', 'calculated'
-    created_at TIMESTAMP
-)
-
--- Currency exchange rates
-exchange_rates (
-    id SERIAL PRIMARY KEY,
-    from_currency VARCHAR(3),
-    to_currency VARCHAR(3),
-    rate DECIMAL,
-    rate_date DATE,
-    source VARCHAR,
-    created_at TIMESTAMP
-)
+-- Multi-Market Support
+market_configurations, data_sources
 ```
 
-## API Design
+### Key Architectural Decisions
 
-### RESTful Endpoints
+1. **Portfolio-Level Permissions**: Each portfolio has its own sharing settings
+2. **Market-Agnostic Design**: Investment entities support any market/currency
+3. **Audit Trail**: All financial changes tracked with timestamps and user info
+4. **Cache Management**: Dedicated tables for cache status and invalidation
 
+## API Architecture
+
+### RESTful Design Principles
 ```
-Authentication:
-POST /auth/login
-POST /auth/logout
-GET  /auth/me
-
-Investments:
-GET    /api/investments           # List all investments
-POST   /api/investments           # Create investment
-GET    /api/investments/:id       # Get investment details
-PUT    /api/investments/:id       # Update investment
-DELETE /api/investments/:id       # Delete investment
-
-Transactions:
-GET    /api/investments/:id/transactions    # Get investment transactions
-POST   /api/investments/:id/transactions    # Add transaction
-PUT    /api/transactions/:id                # Update transaction
-DELETE /api/transactions/:id                # Delete transaction
-
-Portfolio:
-GET    /api/portfolio/summary               # Total value, gain/loss
-GET    /api/portfolio/performance           # Performance metrics
-GET    /api/portfolio/allocation            # Asset allocation
-
-Market Data:
-GET    /api/prices/:symbol                  # Get current price
-POST   /api/prices/update                   # Force price update
-GET    /api/currencies/rates                # Exchange rates
+Authentication: /auth/*
+Investments: /api/investments/*
+Portfolios: /api/portfolios/*
+Transactions: /api/transactions/*
+Market Data: /api/market/*
+Family: /api/family/*
 ```
 
-## Development Environment Setup
+### Multi-Market API Strategy
+- **Unified Interface**: Same API structure for all markets
+- **Market-Specific Adapters**: Backend handles market differences
+- **Fallback Mechanisms**: Graceful handling of API failures
+- **Rate Limiting**: Respect external API limits
 
-### Required Tools
-```bash
-# Development tools
-- Node.js (v18+)
-- npm or yarn
-- PostgreSQL (v14+)
-- Git
-- VS Code or continue with Neovim
-
-# Optional but recommended
-- Docker & Docker Compose
-- Postman or similar API testing tool
-- Database GUI (pgAdmin, DBeaver)
-```
-
-### Project Structure
-```
-investment-tracker/
-├── frontend/                 # Next.js application
-│   ├── components/
-│   ├── pages/
-│   ├── styles/
-│   └── utils/
-├── backend/                  # Express API
-│   ├── src/
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── middleware/
-│   │   └── services/
-│   ├── migrations/
-│   └── tests/
-├── database/
-│   ├── migrations/
-│   └── seeds/
-├── docker-compose.yml        # Local development
-├── docs/                     # Documentation
-└── README.md
-```
-
-## External Integrations
+## External Integration Architecture
 
 ### Price Data Sources
-**Primary**: Alpha Vantage (free tier: 500 requests/day)
-**Backup**: Yahoo Finance (unofficial API)
-**Currency**: Fixer.io or ExchangeRate-API
+- **Primary US**: Alpha Vantage (500 requests/day free)
+- **Primary Israeli**: Funder.co.il (scraping/API)
+- **Currency**: ExchangeRate-API
+- **Fallback Strategy**: Multiple providers per market
 
-### Price Update Strategy
-- Batch updates once daily for all public investments
-- Cache prices for 1 hour during market hours
-- Manual override always available
-- Graceful degradation if API unavailable
+### Update Strategy
+- **Frequency**: Market-specific (US: hourly, Israeli: 4-hourly)
+- **Scheduling**: Background jobs during market hours
+- **Failure Handling**: Graceful degradation, retry logic
+- **Cache Warming**: Pre-populate cache before market open
 
-## Security Considerations
+## Security Architecture
 
-### Data Protection
-- HTTPS everywhere
-- JWT tokens for API authentication
-- Input validation and sanitization
-- SQL injection prevention (parameterized queries)
-- Rate limiting on API endpoints
+### Authentication & Authorization
+- **Primary Auth**: Google OAuth via NextAuth.js
+- **Session Management**: JWT tokens with Redis storage
+- **API Security**: Token validation on all protected endpoints
+- **Data Isolation**: User-based data filtering at database level
 
-### Access Control
-- User-based data isolation
-- Family sharing through explicit user relationships
-- No admin/super-user roles initially
+### Family Sharing Security
+- **Explicit Permissions**: No default sharing, explicit grants only
+- **Permission Inheritance**: Portfolio settings override global settings
+- **Audit Logging**: Track all permission changes
 
-## Performance & Scalability
+## Performance Architecture
 
 ### Caching Strategy
-- Price data cached for 1 hour
-- Portfolio calculations cached for 15 minutes
-- User sessions cached in Redis (future)
-
-### Database Optimization
-- Indexes on foreign keys and date fields
-- Partitioning for price_history (future)
-- Connection pooling
-
-### Monitoring
-- Basic error logging
-- API response time tracking
-- Database query performance monitoring
-
-## Deployment Strategy
-
-### Phase 1: Local Development
-```bash
-# Using Docker Compose
-docker-compose up -d postgres
-npm run dev  # Frontend
-npm run api  # Backend
+```
+Response Time Priority:
+1. Memory Cache (< 50ms)
+2. Redis Cache (< 200ms)
+3. Database Cache (< 500ms)
+4. Fresh Calculation (< 2000ms)
 ```
 
-### Phase 2: Cloud Deployment
-- **Frontend**: Vercel (automatic deployments)
-- **Backend**: Railway or Render
-- **Database**: PostgreSQL on Railway/Render or managed service
-- **Environment**: Staging and Production
+### Background Processing
+- **Price Updates**: Scheduled jobs for market data
+- **Portfolio Calculations**: Async calculation with cache updates
+- **Cache Warming**: Pre-calculate common queries
+- **Cleanup Jobs**: Regular cache and audit log cleanup
 
-## Learning Path Recommendations
+## Deployment Architecture
 
-### Week 1-2: Foundation
-1. React fundamentals
-2. Next.js basics
-3. Node.js and Express setup
-4. PostgreSQL basics
-
-### Week 3-4: Core Features
-1. Database schema implementation
-2. Basic CRUD operations
-3. Authentication integration
-4. Simple frontend forms
-
-### Week 5-8: Investment Logic
-1. Transaction recording
-2. Price data integration
-3. Portfolio calculations
-4. Basic reporting
-
-### Week 9-12: Polish & Deploy
-1. Error handling
-2. Responsive design
-3. Testing
-4. Deployment setup
-
-## Development Tools Configuration
-
-### Neovim Extensions for Web Development
-```lua
--- Add to your Neovim config
--- TypeScript/JavaScript support
-'neovim/nvim-lspconfig'
-'jose-elias-alvarez/null-ls.nvim'  -- ESLint, Prettier
-'windwp/nvim-ts-autotag'           -- HTML tag completion
-
--- Database tools
-'tpope/vim-dadbod'                 -- SQL queries
-'kristijanhusak/vim-dadbod-ui'     -- Database UI
+### Development Environment
+```
+Local: Docker Compose (PostgreSQL + Redis + Node.js)
+Development workflow: Hot reload, local database
 ```
 
-### Alternative: VS Code Setup
-If complexity becomes overwhelming, VS Code with these extensions:
-- ES7+ React/Redux/React-Native snippets
-- REST Client
-- PostgreSQL
-- GitLens
+### Production Environment
+```
+Frontend: Vercel (CDN, auto-scaling)
+Backend: Railway/Render (container-based)
+Database: Managed PostgreSQL
+Cache: Redis Cloud/managed service
+```
+
+### Environment Strategy
+- **Development**: Local Docker with test data
+- **Staging**: Cloud environment with production-like setup
+- **Production**: Fully managed services with monitoring
+
+## Scalability Considerations
+
+### Current Scale Target
+- **Users**: 3-5 family members
+- **Investments**: 100-500 per family
+- **Transactions**: 1000-5000 total
+- **Performance**: Sub-second response times
+
+### Growth Architecture
+- **Database**: PostgreSQL can handle 10x growth easily
+- **Caching**: Redis cluster for high availability
+- **API**: Horizontal scaling via load balancers
+- **Storage**: Separate file storage for documents (future)
+
+## Risk Mitigation Architecture
+
+### Data Safety
+- **Backups**: Automated daily database backups
+- **Validation**: Multi-layer input validation
+- **Transactions**: Atomic operations for financial data
+- **Audit Trail**: Complete change history
+
+### System Reliability
+- **Graceful Degradation**: Show cached data if APIs fail
+- **Error Handling**: Comprehensive error logging and alerting
+- **Monitoring**: Health checks and performance monitoring
+- **Rollback Strategy**: Database migration rollback procedures
+
+## Learning Path Architecture
+
+### Development Phases
+1. **Foundation**: Single-user, single-market, basic CRUD
+2. **Multi-Market**: Add Israeli market support and caching
+3. **Family Sharing**: Add permission system and family features
+4. **Performance**: Optimize caching and background jobs
+
+### Technology Learning Progression
+1. **Week 1-2**: React + Express + PostgreSQL basics
+2. **Week 3-4**: Authentication and basic investment tracking
+3. **Week 5-6**: Multi-market price feeds and caching
+4. **Week 7-8**: Family sharing and permissions
+5. **Week 9-12**: Performance optimization and deployment
