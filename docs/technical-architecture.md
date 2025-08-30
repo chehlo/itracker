@@ -18,6 +18,7 @@
   - Extensive package ecosystem
   - Great API development tools
   - Easy integration with frontend
+  - Start with pure Express + PostgreSQL (no Redis initially). Define API interfaces and database schema migration before adding additional services. 
 
 ### Database
 **Recommendation: PostgreSQL**
@@ -40,6 +41,7 @@
   - Price data caching for performance
   - Session management
   - Background job coordination
+    - Planned for Phase 2+. do not implement untill core CRUD API are Complete and functional. 
 
 ### Hosting & Deployment
 **Phase 1**: Local development with Docker
@@ -70,6 +72,9 @@
 ```
 
 ## Core Architectural Principles
+
+Development will proceed backend-first. Define database tables, API contracts, and TypeScript interfaces early.
+Keep abstractions clean to allow adding Redis, background jobs, and permissions later without refactoring core logic.
 
 ### 1. Multi-Market Support
 - **Architecture**: Pluggable price provider system
@@ -233,7 +238,7 @@ Cache: Redis Cloud/managed service
 ## Learning Path Architecture
 
 ### Development Phases
-1. **Foundation**: Single-user, single-market, basic CRUD
+1. **Foundation**: Single-user, single-market, backend-first basic CRUD via API before frontend dwork
 2. **Multi-Market**: Add Israeli market support and caching
 3. **Family Sharing**: Add permission system and family features
 4. **Performance**: Optimize caching and background jobs

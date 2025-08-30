@@ -3,10 +3,12 @@
 ## Project Overview
 
 A web-based personal investment portfolio tracking application designed for family use to monitor and analyze investments across multiple categories and currencies.
+Primary use is personal/family only (no SaaS scaling planned), but code should be architected with clean interfaces to allow future scaling if needed.
 
 ## Core Objectives
 
 - Replace Excel-based investment tracking with a user-friendly web application
+- Implement backend first; start with API contracts and database schema before frontend development
 - Provide high-level portfolio overview and performance tracking
 - Support multiple investment types with different data sources
 - Enable family member access with simple authentication
