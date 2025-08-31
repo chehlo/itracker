@@ -21,8 +21,7 @@ INSERT INTO portfolios (id, name, description, user_id, currency) VALUES
 );
 
 -- Insert test investments (different types)
-INSERT INTO investments (id, name, type, symbol, portfolio_id, base_currency, exposure_currency, current_value, last_price, last_price_date) VALUES
-
+INSERT INTO investments (id, name, type, symbol, portfolio_id, base_currency, exposure_currency, current_value, last_price, last_price_date, commitment_amount, total_invested, total_distributions, expected_completion_date) VALUES
 -- Public market investments
 (
     '550e8400-e29b-41d4-a716-446655440002',
@@ -34,7 +33,11 @@ INSERT INTO investments (id, name, type, symbol, portfolio_id, base_currency, ex
     'USD',
     15000.00,
     150.00,
-    NOW() - INTERVAL '1 day'
+    NOW() - INTERVAL '1 day',
+    NULL,
+    NULL,
+    NULL,
+    NULL
 ),
 
 (
@@ -47,7 +50,11 @@ INSERT INTO investments (id, name, type, symbol, portfolio_id, base_currency, ex
     'USD',
     25000.00,
     420.50,
-    NOW() - INTERVAL '2 hours'
+    NOW() - INTERVAL '2 hours',
+    NULL,
+    NULL,
+    NULL,
+    NULL
 ),
 
 -- Alternative investment
@@ -61,7 +68,11 @@ INSERT INTO investments (id, name, type, symbol, portfolio_id, base_currency, ex
     'USD',
     50000.00,
     NULL,
-    NOW() - INTERVAL '30 days'
+    NOW() - INTERVAL '30 days',
+    NULL,
+    NULL,
+    NULL,
+    NULL
 ),
 
 -- Recurring investment
@@ -75,7 +86,11 @@ INSERT INTO investments (id, name, type, symbol, portfolio_id, base_currency, ex
     'USD',
     12000.00,
     NULL,
-    NOW() - INTERVAL '7 days'
+    NOW() - INTERVAL '7 days',
+    NULL,
+    NULL,
+    NULL,
+    NULL
 ),
 
 -- Private equity investment
