@@ -1,5 +1,7 @@
 const { spawn } = require('child_process');
 const { createTestClient, closeTestClient } = require('../helpers/database-config');
+const { checkContainerStatus, validateDatabaseConnection } = require('../helpers/container-utils');
+const { CONTAINER_NAMES, DATABASE_CONFIGS } = require('../config/test-config');
 
 // Global state to track prerequisite status
 let dockerRunning = false;
@@ -80,112 +82,29 @@ describe('Development Environment Prerequisites (Sequential)', () => {
         throw new Error('SKIPPED: Docker prerequisites not met');
       }
 
-      return new Promise((resolve, reject) => {
-        // Try docker compose first, then docker-compose
-        const tryDockerCompose = (command) => {
-          const dockerPs = spawn(command.split(' ')[0], [...command.split(' ').slice(1), 'ps', DB_SERVICE_NAME], {
-            cwd: '../environment',
-            stdio: 'pipe'
-          });
-
-          let output = '';
-          let errorOutput = '';
-
-          dockerPs.stdout.on('data', (chunk) => {
-            output += chunk.toString();
-          });
-
-          dockerPs.stderr.on('data', (chunk) => {
-            errorOutput += chunk.toString();
-          });
-
-          return new Promise((res, rej) => {
-            dockerPs.on('close', (code) => {
-              if (code === 0) {
-                res({ success: true, output, errorOutput });
-              } else {
-                res({ success: false, output, errorOutput });
-              }
-            });
-
-            dockerPs.on('error', (error) => {
-              res({ success: false, error: error.message });
-            });
-          });
-        };
-
-        // Try both versions
-        Promise.resolve()
-          .then(() => tryDockerCompose('docker compose'))
-          .then((result) => {
-            if (result.success) return result;
-            return tryDockerCompose('docker-compose');
-          })
-          .then((result) => {
-            if (result.success) {
-              const { output } = result;
-              if (output.includes(DB_SERVICE_NAME) && output.includes('Up')) {
-                containerRunning = true;
-                console.log('✅ PostgreSQL container is running');
-                resolve();
-              } else if (output.includes(DB_SERVICE_NAME) && !output.includes('Up')) {
-                console.error('❌ PostgreSQL container exists but is not running');
-                reject(new Error(`PREREQUISITE FAILED: PostgreSQL container is stopped\n\n🔧 Fix: Start the container\n   cd environment\n   docker compose up -d DB_SERVICE_NAME\n   # or\n   docker-compose up -d DB_SERVICE_NAME`));
-              } else {
-                console.error('❌ PostgreSQL container not found');
-                reject(new Error(`PREREQUISITE FAILED: PostgreSQL container not found\n\n🔧 Fix: Create and start the container\n   cd environment\n   docker compose up -d DB_SERVICE_NAME\n   # or\n   docker-compose up -d DB_SERVICE_NAME`));
-              }
-            } else {
-              console.error('❌ Cannot check container status');
-              reject(new Error(`PREREQUISITE FAILED: Cannot run docker compose commands\n\nError: ${result.error || result.errorOutput}\n\n🔧 Fix: Ensure you're in the project root and environment/docker-compose.yml exists`));
-            }
-          })
-          .catch((error) => {
-            reject(error);
-          });
-      });
+      const isRunning = await checkContainerStatus(CONTAINER_NAMES.development);
+      if (isRunning) {
+        containerRunning = true;
+        console.log('✅ PostgreSQL container is running');
+      } else {
+        console.error('ℹ️ PostgreSQL container not running, checking status...');
+        throw new Error(`PREREQUISITE FAILED: PostgreSQL container not running\n\n🔧 Fix: Start the container:\n  cd environment\n  docker compose up -d ${DB_SERVICE_NAME}  # or docker-compose up -d ${DB_SERVICE_NAME}\n  Wait 10-30 seconds for initialization\n\n🔍 Debug commands:\n  docker ps\n  docker logs investment_tracker_db`);
+      }
     });
 
     test('PostgreSQL container must be healthy and accepting connections', async () => {
       if (!containerRunning) {
         throw new Error('SKIPPED: PostgreSQL container not running');
       }
-
-      return new Promise((resolve, reject) => {
-        // Try both docker compose versions for health check
-        const healthCheck = spawn('docker', ['exec', 'investment_tracker_db', 'pg_isready', '-U', 'dev_user', '-d', 'investment_tracker_dev'], {
-          stdio: 'pipe'
-        });
-
-        let output = '';
-        let errorOutput = '';
-
-        healthCheck.stdout.on('data', (chunk) => {
-          output += chunk.toString();
-        });
-
-        healthCheck.stderr.on('data', (chunk) => {
-          errorOutput += chunk.toString();
-        });
-
-        healthCheck.on('close', (code) => {
-          if (code === 0) {
-            databaseReady = true;
-            console.log('✅ PostgreSQL is ready and accepting connections');
-            resolve();
-          } else {
-            console.error('❌ PostgreSQL is not ready');
-            console.error(`   Output: ${output}`);
-            console.error(`   Error: ${errorOutput}`);
-            reject(new Error(`PREREQUISITE FAILED: PostgreSQL not ready to accept connections\n\n🔧 Common causes:\n  1. Container still starting up (wait 10-30 seconds and retry)\n  2. Database initialization failed\n  3. Wrong database name or user\n\n🔍 Debug commands:\n   docker logs investment_tracker_db\n   docker exec investment_tracker_db psql -U dev_user -d investment_tracker_dev -c "SELECT 1;"`));
-          }
-        });
-
-        healthCheck.on('error', (error) => {
-          console.error('❌ Health check command failed');
-          reject(new Error(`PREREQUISITE FAILED: Cannot execute health check\n\nError: ${error.message}\n\n🔧 Fix: Ensure container name is correct: investment_tracker_db`));
-        });
-      });
+      const result = await validateDatabaseConnection(DATABASE_CONFIGS.development);
+      if (result.success) {
+        databaseReady = true;
+        console.log('✅ Database is accepting connections');
+      } else {
+        console.error('❌ Database connection failed');
+        result.troubleshooting.forEach(tip => console.error(`   - ${tip}`));
+        throw new Error(`PREREQUISITE FAILED: Cannot connect to database\n\nError: ${result.error}\n\n🔧 Fix:\n  ${result.troubleshooting.join('\n  ')}\n`);
+      }
     });
   });
 

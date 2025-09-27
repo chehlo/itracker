@@ -11,8 +11,8 @@ services:
       - "5432:5432"
     volumes:
       - db-dev-data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
-      - ./database/seed-dev.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      - ./environment/database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./environment/database/seed-dev.sql:/docker-entrypoint-initdb.d/02-seed.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dev_user -d investment_tracker_dev"]
       interval: 5s
@@ -32,7 +32,7 @@ services:
       - "5433:5432"
     volumes:
       - db-test-data:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./environment/database/init.sql:/docker-entrypoint-initdb.d/01-init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U test_user -d investment_tracker_test"]
       interval: 5s

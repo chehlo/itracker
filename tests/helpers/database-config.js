@@ -1,17 +1,22 @@
-// Database configuration for tests
-const TEST_DB_CONFIG = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT) || 5432,
-  database: process.env.DB_NAME || 'investment_tracker_dev',
-  user: process.env.DB_USER || 'dev_user',
-  password: process.env.DB_PASSWORD || 'dev_password',
-};
+const { CONTAINER_NAMES, DATABASE_CONFIGS } = require('../config/test-config');
 
 // Helper to create database client
 const { Client } = require('pg');
 
+async function createAuthTestClient() {
+    const client = new Client(DATABASE_CONFIGS.test);
+  await client.connect();
+  return client;
+}
+
+async function closeAuthTestClient(client) {
+  if (client) {
+    await client.end();
+  }
+}
+
 async function createTestClient() {
-  const client = new Client(TEST_DB_CONFIG);
+  const client = new Client(DATABASE_CONFIGS.development);
   await client.connect();
   return client;
 }
@@ -24,7 +29,8 @@ async function closeTestClient(client) {
 }
 
 module.exports = {
-  TEST_DB_CONFIG,
   createTestClient,
-  closeTestClient
+  closeTestClient,
+  createAuthTestClient,
+  closeAuthTestClient,
 };
