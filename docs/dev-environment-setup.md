@@ -263,3 +263,26 @@ module.exports = {
 - **Configuration backup**: All configs in version control
 - **Database backup**: Regular pg_dump during development
 - **Environment recovery**: Documented in this guide
+
+# Project File Organization Guidelines
+### Directory Structure Rules
+ - `/backend` - Backend source code only (Express, routes, middleware)
+ - `/frontend` - Frontend source code only (React/Next.js when added)
+ - `/tests` - All test files organized by component
+ - `/docs` - Project documentation
+ - `/environment` - Development environment setup (Docker, scripts)
+
+ ### Test Organization Pattern
+ - `/tests/backend/` - Backend API and unit tests
+ - `/tests/frontend/` - Frontend component tests (future)
+ - `/tests/infrastructure/` - Database, environment, setup tests
+ - `/tests/e2e/` - End-to-end user journey tests (future)
+
+ ### New File Guidelines
+ **Backend Development:**
+ - Source files: `backend/src/[feature]/`
+ - Test files: `tests/backend/[feature].test.js`
+
+ **Frontend Development:** (future)
+ - Source files: `frontend/src/[feature]/`
+ - Test files: `tests/frontend/[feature].test.js`
