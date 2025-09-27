@@ -7,6 +7,8 @@ let dockerComposeAvailable = false;
 let containerRunning = false;
 let databaseReady = false;
 
+const DB_SERVICE_NAME = 'db-dev';
+
 describe('Development Environment Prerequisites (Sequential)', () => {
 
   describe('Step 1: Docker Environment', () => {
@@ -81,7 +83,7 @@ describe('Development Environment Prerequisites (Sequential)', () => {
       return new Promise((resolve, reject) => {
         // Try docker compose first, then docker-compose
         const tryDockerCompose = (command) => {
-          const dockerPs = spawn(command.split(' ')[0], [...command.split(' ').slice(1), 'ps', 'postgres'], {
+          const dockerPs = spawn(command.split(' ')[0], [...command.split(' ').slice(1), 'ps', DB_SERVICE_NAME], {
             cwd: '../environment',
             stdio: 'pipe'
           });
@@ -122,16 +124,16 @@ describe('Development Environment Prerequisites (Sequential)', () => {
           .then((result) => {
             if (result.success) {
               const { output } = result;
-              if (output.includes('postgres') && output.includes('Up')) {
+              if (output.includes(DB_SERVICE_NAME) && output.includes('Up')) {
                 containerRunning = true;
                 console.log('✅ PostgreSQL container is running');
                 resolve();
-              } else if (output.includes('postgres') && !output.includes('Up')) {
+              } else if (output.includes(DB_SERVICE_NAME) && !output.includes('Up')) {
                 console.error('❌ PostgreSQL container exists but is not running');
-                reject(new Error(`PREREQUISITE FAILED: PostgreSQL container is stopped\n\n🔧 Fix: Start the container\n   cd environment\n   docker compose up -d postgres\n   # or\n   docker-compose up -d postgres`));
+                reject(new Error(`PREREQUISITE FAILED: PostgreSQL container is stopped\n\n🔧 Fix: Start the container\n   cd environment\n   docker compose up -d DB_SERVICE_NAME\n   # or\n   docker-compose up -d DB_SERVICE_NAME`));
               } else {
                 console.error('❌ PostgreSQL container not found');
-                reject(new Error(`PREREQUISITE FAILED: PostgreSQL container not found\n\n🔧 Fix: Create and start the container\n   cd environment\n   docker compose up -d postgres\n   # or\n   docker-compose up -d postgres`));
+                reject(new Error(`PREREQUISITE FAILED: PostgreSQL container not found\n\n🔧 Fix: Create and start the container\n   cd environment\n   docker compose up -d DB_SERVICE_NAME\n   # or\n   docker-compose up -d DB_SERVICE_NAME`));
               }
             } else {
               console.error('❌ Cannot check container status');
@@ -272,7 +274,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 🐳 Quick Setup Commands:
 cd environment
-docker compose up -d postgres  # or docker-compose up -d postgres
+docker compose up -d $DB_SERVICE_NAME  # or docker-compose up -d $DB_SERVICE_NAME
 cd ../tests
 npm test
 `);
