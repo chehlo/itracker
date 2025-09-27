@@ -286,3 +286,27 @@ module.exports = {
  **Frontend Development:** (future)
  - Source files: `frontend/src/[feature]/`
  - Test files: `tests/frontend/[feature].test.js`
+
+## Testing Environment Isolation
+
+### Database Testing Strategy
+- **Production Database**: Used by backend application (`backend/src/config/database.js`)
+- **Test Database**: Separate isolated configuration (`tests/helpers/database-config.js`)
+- **Principle**: Tests never use production database configuration
+
+### Database Connection Rules
+**Backend Application:**
+- Uses environment variables from `backend/.env`
+- Connects to `investment_tracker_dev` database
+- Pool management for production workloads
+
+**Test Environment:**
+- Uses test-specific database configuration
+- Connects to `investment_tracker_test` database (or separate test instance)
+- Independent connection management
+- Environment-agnostic (works regardless of working directory)
+
+### Test Database Configuration Requirements
+All test files must use:
+```javascript
+const { createTestClient, closeTestClient } = require('../helpers/database-config');
