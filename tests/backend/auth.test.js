@@ -2,11 +2,6 @@ const request = require('../../backend/node_modules/supertest');
 const app = require('../../backend/src/app.js');
 const { createAuthTestClient, closeAuthTestClient } = require('../helpers/database-config.js')
 
-// Add beforeAll setup in auth test file to ensure test database exists and is running
-// Check if test database container is running, start if needed
-// Ensure test database has schema but starts empty for each test run
-// Add error handling for database connection failures with helpful messages
-
 let client;
 beforeAll(async () => {
   client = await createAuthTestClient().catch(async (err) => {
@@ -45,6 +40,13 @@ const userData = {
   name: 'Test User'
 };
 
+// add invalid user data for negative tests
+const invalidUserData = {
+  email: 'invalidemail',
+  password: 'short',
+  name: ''
+};
+
 describe('POST /api/auth/register', () => {
   it('should register a new user', async () => {
     const res = await request(app)
@@ -73,6 +75,72 @@ describe('POST /api/auth/register', () => {
       .send(userData);
     expect(res.statusCode).toEqual(409);
   });
+
+  // security validation tests 
+  it ('should reject passwords that are shorter than 6 characters', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: userData.email, password: invalidUserData.password, name: 'Test User' });
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it ('should accept password with exactly 6 characters', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: userData.email, password: '123456', name: 'Test User' });
+    expect(res.statusCode).toEqual(201);
+    expect(res.body).toHaveProperty('token');
+    expect(res.body.user).toHaveProperty('id');
+    expect(res.body.user.email).toBe(userData.email);
+    expect(res.body.user.name).toBe(userData.name);
+  });
+
+  it ('should reject invalid email formats', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'invalidemail', password: 'validPassword123', name: 'Test User' });
+    expect(res.statusCode).toEqual(400);
+  });
+
+  it ('should safely handle SQL injection attempts in email field', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: userData.email + "'; DROP TABLE users; --", password: 'validPassword123', name: 'Test User' });
+    expect(res.statusCode).toEqual(400); // Assuming the server responds with 400 for invalid email
+    // Verify that the users table still exists by attempting to register a valid user
+    const res2 = await request(app)
+      .post('/api/auth/register')
+      .send(userData);
+    expect(res2.statusCode).toEqual(201);
+    expect(res2.body).toHaveProperty('token');
+  });
+
+  it ('should safely handle SQL injection attempts in name field', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: userData.email, password: userData.password, name: "Test User'; DROP TABLE users; --" });
+    expect(res.statusCode).toEqual(400);
+    // Verify that the users table still exists by attempting to register a valid user
+    const res2 = await request(app)
+      .post('/api/auth/register')
+      .send(userData);
+    expect(res2.statusCode).toEqual(201);
+    expect(res2.body).toHaveProperty('token');
+  });
+
+  it ('should safely handle special characters in fields', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ email: "/r/n/t'<>?;:[]{}|`~!@#$%^&*()-_=+\\", password: userData.password, name: 'Test User' });
+    expect(res.statusCode).toEqual(400); // Assuming the server responds with 400 for invalid email
+    // Verify that the users table still exists by attempting to register a valid user
+    const res2 = await request(app)
+      .post('/api/auth/register')
+      .send(userData);
+    expect(res2.statusCode).toEqual(201);
+    expect(res2.body).toHaveProperty('token');
+  }); 
+
 });
 
 describe('POST /api/auth/login', () => {
