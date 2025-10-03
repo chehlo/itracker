@@ -3,15 +3,6 @@
   "version": "1.0.0",
   "description": "Infrastructure and integration tests",
   "main": "index.js",
-  "scripts": {
-    "test": "jest --runInBand --verbose",
-    "test:watch": "jest --watch --runInBand",
-    "test:coverage": "jest --coverage --runInBand",
-    "test:env": "jest infrastructure/environment.test.js --runInBand",
-    "test:db": "jest infrastructure/database.test.js --runInBand",
-    "test:verbose": "jest --verbose --runInBand",
-    "test:silent": "jest --silent --runInBand"
-  },
   "devDependencies": {
     "jest": "^29.7.0",
     "@types/jest": "^29.5.12",
