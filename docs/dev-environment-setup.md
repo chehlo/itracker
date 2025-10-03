@@ -310,3 +310,15 @@ module.exports = {
 All test files must use:
 ```javascript
 const { createTestClient, closeTestClient } = require('../helpers/database-config');
+
+### Current Status: Database Configuration Refactoring
+
+**Issue Identified**: Test and production database connections use incompatible patterns
+- Tests create isolated Client connections
+- Controllers import production Pool connections
+- Need unified approach that works in both contexts
+
+**In Progress**: Implementing environment-based configuration pattern
+- Single database module with NODE_ENV awareness
+- Tests set environment variables before app initialization
+- Controllers remain unchanged (dependency on abstraction)

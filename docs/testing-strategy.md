@@ -173,6 +173,19 @@ const InvestmentFactory = {
   }
 };
 ```
+### Lessons Learned: Test Database Isolation
+
+**Challenge**: Initial implementation had separate connection patterns for tests vs production
+- Production used Pool exports from database.js
+- Tests used Client connections from database-config.js
+- Controllers couldn't work with both patterns simultaneously
+
+**Solution**: Environment-based configuration (implemented)
+- Single database module reads NODE_ENV
+- Test files set environment variables before requiring app
+- Controllers import unified abstraction layer
+
+**Key Insight**: Test database configuration must be set BEFORE app initialization, not after.
 
 #### Realistic Test Scenarios
 ```javascript
