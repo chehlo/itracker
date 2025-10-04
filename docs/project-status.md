@@ -25,15 +25,14 @@ Web-based personal investment portfolio tracking application for family use, sup
 **Completed Milestones:**
 - ✅ **Milestone 1**: Basic Express server with health endpoint
 - ✅ **Milestone 2**: Database connection test endpoint working
+- ✅ **Milestone 3a**: Database configuration refactored for test isolation
 
 **Recent Progress (October 2025):**
-- ✅ Input validation middleware implemented and tested
-- ✅ Authentication routes and controllers scaffolded
-- ✅ 3 validation tests passing (email format, password length, required fields)
-- 🔄 Database configuration refactoring in progress (test vs production isolation)
+- ✅ Environment-based database config (test/dev isolation complete)
+- ✅ 22 infrastructure tests passing (no regression from refactoring)
+- ✅ 3 validation tests passing (email, password, required fields)
 
 **Current Work:**
-- 🔄 **Milestone 3a**: Fix database configuration for test isolation
 - ⏳ **Milestone 3b**: Complete authentication endpoints (register/login)
 - ⏳ **Milestone 3c**: JWT token generation and validation
 

@@ -1,17 +1,24 @@
-const { CONTAINER_NAMES, DATABASE_CONFIGS } = require('../config/test-config');
+const pool = require("../../backend/src/config/database");
+const { Client } = require("pg");
+const { DATABASE_CONFIGS } = require("../config/test-config");
 
-// Helper to create database client
-const { Client } = require('pg');
-
-async function createAuthTestClient() {
-    const client = new Client(DATABASE_CONFIGS.test);
-  await client.connect();
-  return client;
+async function clearTestDatabase() {
+  try {
+    await pool.query("DELETE FROM users");
+    console.log("Test database cleared.");
+  } catch (err) {
+    console.error("Error clearing test database:", err);
+    throw err;
+  }
 }
 
-async function closeAuthTestClient(client) {
-  if (client) {
-    await client.end();
+async function closeTestConnections() {
+  try {
+    await pool.end();
+    console.log("Test database connections closed.");
+  } catch (err) {
+    console.error("Error closing test database connections:", err);
+    throw err;
   }
 }
 
@@ -21,7 +28,6 @@ async function createTestClient() {
   return client;
 }
 
-// Helper to safely close client
 async function closeTestClient(client) {
   if (client) {
     await client.end();
@@ -31,6 +37,6 @@ async function closeTestClient(client) {
 module.exports = {
   createTestClient,
   closeTestClient,
-  createAuthTestClient,
-  closeAuthTestClient,
+  clearTestDatabase,
+  closeTestConnections,
 };

@@ -1,36 +1,23 @@
 const { Pool } = require('pg');
+const { DATABASE_CONFIGS } = require('../../../tests/config/test-config');
 
-const createDatabasePool = () => {
-  const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-    max: 20, // maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // close idle clients after 30 seconds
-    connectionTimeoutMillis: 2000, // return an error after 2 seconds if connection could not be established
-  });
+const env = process.env.NODE_ENV || 'development';
+const config = DATABASE_CONFIGS[env];
 
-  pool.connect((err, client, release) => {
-    if (err) {
-      console.error('Error acquiring client', err.stack);
-    }
-    client.query('SELECT NOW()', (err, result) => {
-      release();
-      if (err) {
-        console.error('Error executing query', err.stack);
-      }
-      console.log('Database connected:', result.rows);
-    });
-  });
+if (!config) {
+  throw new Error(`No database configuration found for environment: ${env}`);
+}
 
-  pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-    process.exit(-1);
-  });
-  
-  return pool;
-};
+const pool = new Pool({
+  ...config,
+  max: env === 'test'? 5 : 20, // Lower max connections for test environment
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
 
-module.exports = createDatabasePool();
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+
+module.exports = pool;

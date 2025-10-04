@@ -1,36 +1,28 @@
+process.env.NODE_ENV = 'test';
 const request = require('../../backend/node_modules/supertest');
 const app = require('../../backend/src/app.js');
-const { createAuthTestClient, closeAuthTestClient } = require('../helpers/database-config.js')
+const { clearTestDatabase,  closeTestConnections } = require('../helpers/database-config');
 
-let client;
+const pool = require('../../backend/src/config/database');
+
 beforeAll(async () => {
-  client = await createAuthTestClient().catch(async (err) => {
-    console.error('Error connecting to test database:', err.message);
-    console.error('Make sure the test database is running and accessible.');
-    process.exit(1);
-  });
-
-  if (client) {
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email VARCHAR(255) UNIQUE NOT NULL,
+      password VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
     `);
-  }
-
 });
 
 beforeEach(async () => {
-  // Clean up users table before each test
-  await client.query('DELETE FROM users');
+  await clearTestDatabase();
 });
 
 afterAll(async () => {
-  await closeAuthTestClient(client);
+  await closeTestConnections();
 });
 
 describe('Authentication Endpoints', () => {
