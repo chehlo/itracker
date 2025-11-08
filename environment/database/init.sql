@@ -9,6 +9,7 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
     google_id VARCHAR(255) UNIQUE,
     avatar_url VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

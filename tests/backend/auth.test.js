@@ -1,21 +1,10 @@
 process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-secret-key-for-testing';
 const request = require('../../backend/node_modules/supertest');
 const app = require('../../backend/src/app.js');
 const { clearTestDatabase,  closeTestConnections } = require('../helpers/database-config');
 
 const pool = require('../../backend/src/config/database');
-
-beforeAll(async () => {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL,
-      name VARCHAR(255) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    `);
-});
 
 beforeEach(async () => {
   await clearTestDatabase();

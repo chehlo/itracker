@@ -4,6 +4,9 @@ const { DATABASE_CONFIGS } = require("../config/test-config");
 
 async function clearTestDatabase() {
   try {
+    await pool.query("DELETE FROM transactions");
+    await pool.query("DELETE FROM investments");
+    await pool.query("DELETE FROM portfolios");
     await pool.query("DELETE FROM users");
     console.log("Test database cleared.");
   } catch (err) {
@@ -23,7 +26,10 @@ async function closeTestConnections() {
 }
 
 async function createTestClient() {
-  const client = new Client(DATABASE_CONFIGS.development);
+  const config = process.env.NODE_ENV === 'test'
+    ? DATABASE_CONFIGS.test 
+    : DATABASE_CONFIGS.development;
+  const client = new Client(config);
   await client.connect();
   return client;
 }

@@ -2,11 +2,13 @@
 -- This data is loaded after schema creation
 
 -- Insert test user
-INSERT INTO users (id, email, name, google_id) VALUES
+-- Password is 'password123' hashed with bcrypt
+INSERT INTO users (id, email, name, password_hash, google_id) VALUES
 (
     '550e8400-e29b-41d4-a716-446655440000',
     'test@example.com',
     'Test User',
+    '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW',
     'google_123456789'
 );
 
