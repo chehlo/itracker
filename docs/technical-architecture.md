@@ -29,8 +29,8 @@
   - Great free hosting options
 
 ### Authentication
-**Recommendation: NextAuth.js**
-- Google OAuth integration
+- **Current** JWT-based email/password authentication
+- **Planned (Phase 2)** Google OAuth with NextAuth.js
 - Session management
 - Built for Next.js ecosystem
 

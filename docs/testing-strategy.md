@@ -153,26 +153,9 @@ module.exports = {
 
 ### Test Data Management
 
-#### Factory Pattern for Test Data
-```javascript
-// tests/factories/investmentFactory.js
-const InvestmentFactory = {
-  build: (overrides = {}) => ({
-    id: uuid(),
-    name: 'Test Investment',
-    type: 'public_market',
-    symbol: 'TEST',
-    currency: 'USD',
-    createdAt: new Date(),
-    ...overrides
-  }),
-  
-  createInDB: async (overrides = {}) => {
-    const investment = InvestmentFactory.build(overrides);
-    return await Investment.create(investment);
-  }
-};
-```
+#### Factory Pattern for Test Data (Implemented)
+Factories located in `tests/factories/`: userFactory, portfolioFactory, investmentFactory, transactionFactory.
+Each provides `build()` (data only) and `create()` (insert to DB) methods. Use for database tests, not API integration tests.
 ### Lessons Learned: Test Database Isolation
 
 **Challenge**: Initial implementation had separate connection patterns for tests vs production

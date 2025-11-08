@@ -1,4 +1,5 @@
 const { createTestClient, closeTestClient } = require('../helpers/database-config');
+const { userFactory, portfolioFactory, investmentFactory, transactionFactory } = require('../factories');
 
 // Test data constants for consistency and readability
 const TEST_DATA = {
@@ -147,42 +148,45 @@ describe('Database Schema & Data Tests (Run after environment tests pass)', () =
         await client.query('DELETE FROM portfolios');
         await client.query('DELETE FROM users');
 
-        // Create test user
-        const userResult = await client.query(`
-          INSERT INTO users (id, email, password_hash, name, created_at)
-          VALUES (gen_random_uuid(), $1, $2, $3, NOW())
-          RETURNING id
-        `, [TEST_DATA.user.email, TEST_DATA.user.password_hash, TEST_DATA.user.name]);
-        const userId = userResult.rows[0].id;
+        // Create test user using factory
+        const user = await userFactory.create(client, TEST_DATA.user);
 
-        // Create test portfolio
-        const portfolioResult = await client.query(`
-          INSERT INTO portfolios (id, name, user_id, created_at)
-          VALUES (gen_random_uuid(), $1, $2, NOW())
-          RETURNING id
-        `, [TEST_DATA.portfolio.name, userId]);
-        const portfolioId = portfolioResult.rows[0].id;
+        // Create test portfolio using factory
+        const portfolio = await portfolioFactory.create(client, {
+          name: TEST_DATA.portfolio.name,
+          user_id: user.id
+        });
 
-        // Create test investments (one of each type)
+        // Create test investments (one of each type) using factory
         const investmentIds = [];
         for (const inv of TEST_DATA.investments) {
-          const invResult = await client.query(`
-            INSERT INTO investments (id, portfolio_id, type, name, symbol, notes, commitment_amount, created_at)
-            VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())
-            RETURNING id
-          `, [portfolioId, inv.type, inv.name, inv.symbol || null, inv.notes || null, inv.commitment_amount || null]);
-          investmentIds.push(invResult.rows[0].id);
+          const investment = await investmentFactory.create(client, {
+            ...inv,
+            portfolio_id: portfolio.id
+          });
+          investmentIds.push(investment.id);
         }
 
-        // Create test transactions for the first investment
+        // Create test transactions for the first investment using factory
         const [firstInvestmentId] = investmentIds;
-        await client.query(`
-          INSERT INTO transactions (id, investment_id, type, amount, currency, transaction_date)
-          VALUES
-            (gen_random_uuid(), $1, 'buy', 1000.00, 'USD', NOW()),
-            (gen_random_uuid(), $1, 'capital_call', 500.00, 'USD', NOW()),
-            (gen_random_uuid(), $1, 'contribution', 200.00, 'USD', NOW())
-        `, [firstInvestmentId]);
+        await transactionFactory.create(client, {
+          investment_id: firstInvestmentId,
+          type: 'buy',
+          amount: 1000.00,
+          currency: 'USD'
+        });
+        await transactionFactory.create(client, {
+          investment_id: firstInvestmentId,
+          type: 'capital_call',
+          amount: 500.00,
+          currency: 'USD'
+        });
+        await transactionFactory.create(client, {
+          investment_id: firstInvestmentId,
+          type: 'contribution',
+          amount: 200.00,
+          currency: 'USD'
+        });
 
         console.log('✅ Database state reset complete');
       } catch (error) {
@@ -307,7 +311,11 @@ describe('Database Schema & Data Tests (Run after environment tests pass)', () =
 
   describe('Data Integrity Constraints', () => {
     test('should enforce foreign key constraints', async () => {
-      // Try to insert portfolio with non-existent user_id
+      const user = await userFactory.create(client);
+      const portfolio = await portfolioFactory.create(client, { user_id: user.id });
+
+      expect(portfolio.user_id).toBe(user.id);
+
       const fakeUserId = '00000000-0000-0000-0000-000000000000';
 
       await expect(
@@ -316,6 +324,9 @@ describe('Database Schema & Data Tests (Run after environment tests pass)', () =
           VALUES (gen_random_uuid(), 'Test Portfolio', $1, NOW())
         `, [fakeUserId])
       ).rejects.toThrow();
+
+      await client.query('DELETE FROM portfolios WHERE id = $1', [portfolio.id]);
+      await client.query('DELETE FROM users WHERE id = $1', [user.id]);
 
       console.log('✅ Foreign key constraints working correctly');
     });
@@ -333,46 +344,31 @@ describe('Database Schema & Data Tests (Run after environment tests pass)', () =
     });
 
     test('should enforce positive amount constraint on transactions', async () => {
-      // Test that database rejects transactions with negative amounts
-      // Steps: Create test data, attempt negative amount transaction, verify rejection, cleanup
+      const user = await userFactory.create(client, TEST_DATA.constraintTest);
+      const portfolio = await portfolioFactory.create(client, {
+        user_id: user.id,
+        name: TEST_DATA.portfolio.name
+      });
 
-      // Create test user
-      const userResult = await client.query(`
-        INSERT INTO users (id, email, password_hash, name, created_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, NOW())
-        RETURNING id
-      `, [TEST_DATA.constraintTest.email, TEST_DATA.constraintTest.password_hash, TEST_DATA.constraintTest.name]);
-      const userId = userResult.rows[0].id;
-
-      // Create test portfolio
-      const portfolioResult = await client.query(`
-        INSERT INTO portfolios (id, name, user_id, created_at)
-        VALUES (gen_random_uuid(), $1, $2, NOW())
-        RETURNING id
-      `, [TEST_DATA.portfolio.name, userId]);
-      const portfolioId = portfolioResult.rows[0].id;
-
-      // Create test investment
-      const investmentResult = await client.query(`
-        INSERT INTO investments (id, portfolio_id, type, name, symbol, created_at)
-        VALUES (gen_random_uuid(), $1, $2, $3, $4, NOW())
-        RETURNING id
-      `, [portfolioId, 'public_market', 'Apple Inc', 'AAPL']);
-      const investmentId = investmentResult.rows[0].id;
+      const investment = await investmentFactory.create(client, {
+        portfolio_id: portfolio.id,
+        type: 'public_market',
+        name: 'Apple Inc',
+        symbol: 'AAPL'
+      });
 
       // Attempt to insert transaction with negative amount (should fail)
       await expect(
         client.query(`
           INSERT INTO transactions (id, investment_id, type, amount, currency, transaction_date)
           VALUES (gen_random_uuid(), $1, 'buy', -100.00, 'USD', NOW())
-        `, [investmentId])
+        `, [investment.id])
       ).rejects.toThrow();
 
-      // Clean up test data
-      await client.query('DELETE FROM transactions WHERE investment_id = $1', [investmentId]);
-      await client.query('DELETE FROM investments WHERE id = $1', [investmentId]);
-      await client.query('DELETE FROM portfolios WHERE id = $1', [portfolioId]);
-      await client.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query('DELETE FROM transactions WHERE investment_id = $1', [investment.id]);
+      await client.query('DELETE FROM investments WHERE id = $1', [investment.id]);
+      await client.query('DELETE FROM portfolios WHERE id = $1', [portfolio.id]);
+      await client.query('DELETE FROM users WHERE id = $1', [user.id]);
 
       console.log('✅ Positive amount constraint on transactions working correctly');
     });

@@ -117,8 +117,9 @@ Primary use is personal/family only (no SaaS scaling planned), but code should b
 ## User Requirements
 
 ### Authentication
-- Google OAuth integration
-- Family member access (3-5 users maximum)
+- **Phase 1**: Email/password authentication (currently implemented)
+- **Phase 2**: Google OAuth integration (planned)egration
+- Family member access (3-5 users maximum) this expected scale not a requirements to limit
 - Multi-portfolio support per user
 - Portfolio sharing capabilities (view-only or full access)
 - Basic user permissions management
