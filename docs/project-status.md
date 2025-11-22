@@ -3,9 +3,9 @@
 ## Project Overview
 Web-based personal investment portfolio tracking application for family use, supporting multiple investment types, currencies, and portfolios.
 
-**Started:** August 16, 2025  
-**Current Phase:** Phase 2 - Backend API Foundation  
-**Status:** Core Infrastructure Complete
+**Started:** August 16, 2025
+**Current Phase:** Phase 2 - Backend API Foundation
+**Status:** Authentication Complete, Ready for Investment CRUD
 
 ---
 
@@ -21,24 +21,29 @@ Web-based personal investment portfolio tracking application for family use, sup
 
 ### Phase 2: Backend API Foundation 🔄 IN PROGRESS
 **Started:** September 6, 2025
+**Last Updated:** November 22, 2025
 
 **Completed Milestones:**
 - ✅ **Milestone 1**: Basic Express server with health endpoint
 - ✅ **Milestone 2**: Database connection test endpoint working
 - ✅ **Milestone 3a**: Database configuration refactored for test isolation
+- ✅ **Milestone 3b**: Authentication endpoints (register/login/profile)
+- ✅ **Milestone 3c**: JWT token generation and validation
+- ✅ **Milestone 4**: Basic validation and error handling middleware
+- ✅ **Test Infrastructure**: Factory pattern for test data (34/34 tests passing)
 
-**Recent Progress (October 2025):**
-- ✅ Environment-based database config (test/dev isolation complete)
-- ✅ 22 infrastructure tests passing (no regression from refactoring)
-- ✅ 3 validation tests passing (email, password, required fields)
+**Current Status (November 2025):**
+- ✅ Complete database schema (users, portfolios, investments, transactions)
+- ✅ Authentication fully implemented with JWT
+- ✅ Test infrastructure with factory pattern
+- ✅ 34 tests passing (15 auth + 19 infrastructure)
 
 **Current Work:**
-- ⏳ **Milestone 3b**: Complete authentication endpoints (register/login)
-- ⏳ **Milestone 3c**: JWT token generation and validation
+- 🎯 **Milestone 5**: Investment CRUD endpoints ← NEXT
 
-**Next Milestones:**
-- ⏳ **Milestone 4**: Error handling middleware
-- ⏳ **Milestone 5**: First investment CRUD endpoints
+**Upcoming Milestones:**
+- ⏳ **Milestone 6**: Portfolio CRUD endpoints
+- ⏳ **Milestone 7**: Transaction recording endpoints
 
 ### Phase 3: Core Investment Features ⏳ PLANNED
 - Investment CRUD operations (create, read, update, delete)
@@ -59,40 +64,43 @@ Web-based personal investment portfolio tracking application for family use, sup
 **Backend (Implemented):**
 - Node.js with Express framework
 - PostgreSQL with pg connection pooling
-- Environment configuration with dotenv
-- Development: nodemon, CORS enabled
-
-**Backend (Planned):**
 - JWT authentication with jsonwebtoken
 - Password hashing with bcryptjs
+- Environment configuration with dotenv
 - API testing with Jest + supertest
+- Test factories for data generation
+- Development: nodemon, CORS enabled
 
 **Database:**
 - PostgreSQL 15 running in Docker container (investment_tracker_db)
 - Connection pooling with pg library
-- Schema: users, portfolios, investments, transactions
-- Container healthy and running for 6 days
+- Complete schema: users, portfolios, investments, transactions
+- Investment types: public_market, alternative, recurring, private_equity
+- Transaction types: buy, sell, dividend, contribution, capital_call, distribution, value_update
+- Environment-based config for test/dev isolation
 
 **Development Tools:**
-- Neovim with Copilot for AI-assisted coding
-- Git for version control
+- Claude Code for AI-assisted development
+- Git for version control with feature branch workflow
 - curlapi alias for API testing
+- Docker for database containerization
 
 ---
 
-## Current Sprint
+## Current Sprint (November 22, 2025)
 
-### Completed This Session (September 6, 2025):
-1. Backend package.json with correct dependency versions
-2. PostgreSQL database connection configuration
-3. Basic Express server with health and database test endpoints
-4. Environment variable setup and development workflow
-5. Copilot workflow patterns established
+### Recently Completed:
+1. ✅ Factory pattern implementation for test data
+2. ✅ All authentication endpoints with JWT
+3. ✅ Complete database schema with all tables
+4. ✅ 34 tests passing (infrastructure + auth)
+5. ✅ Git workflow with squashed commits
 
-### Next Session Goals:
-1. Add user authentication endpoints (JWT tokens, login/register)
-2. Implement centralized error handling middleware
-3. Create first investment endpoints for basic CRUD operations
+### Next Sprint Goals:
+1. 🎯 Investment CRUD endpoints (create, read, update, delete)
+2. Portfolio CRUD endpoints
+3. Transaction recording endpoints
+4. Comprehensive API testing for all endpoints
 
 ---
 
@@ -101,34 +109,39 @@ Web-based personal investment portfolio tracking application for family use, sup
 ### Phase 1 Decisions (August 16, 2025):
 1. **JavaScript Full-Stack** - Unified language for learning experience vs Python backend
 2. **PostgreSQL over SQLite** - Better production scalability and JSON support
-3. **Copilot Integration** - AI-assisted development for learning acceleration
+3. **AI-Assisted Development** - Claude Code for learning acceleration
 
-### Phase 2 Decisions (September 6, 2025):
-1. **Copilot Workflow** - Incremental prompting with specific scope ("basic", "minimal") works better than broad requests
+### Phase 2 Decisions (September-November 2025):
+1. **AI Workflow** - Incremental prompting with specific scope works better than broad requests
 2. **Milestone-Based Development** - Small, testable, commit-able increments for steady progress
+3. **Factory Pattern for Tests** - Cleaner test data generation vs raw SQL
+4. **Feature Branch Workflow** - Branches for features, squash to single commit on merge
+5. **API Integration Tests** - Use endpoints (not factories) for auth testing
 
 ---
 
 ## Development Notes
 
 ### What Works Well:
-- **Copilot responds effectively to scope-limited prompts** - "basic Express server" vs "full application setup"
-- **We will need to test again full application setup once we gain more confidence**
-- **Incremental function building** - comments → signature → implementation pattern
-- **Immediate endpoint testing** - prevents compound errors from building up
-- **Environment variable patterns** - standard .env.example → .env workflow
+- **Scope-limited prompts** - "basic Express server" vs "full application setup"
+- **Incremental function building** - Build step-by-step with clear milestones
+- **Immediate endpoint testing** - Prevents compound errors from building up
+- **Environment variable patterns** - Standard .env.example → .env workflow
+- **Factory pattern for tests** - Clean, reusable test data generation
+- **Feature branches** - Isolate work, squash to clean history
 
 ### Common Issues to Watch:
-- **Copilot mixing export patterns** - instance vs factory function exports (require vs require())
+- **Export patterns** - Keep consistent module.exports patterns
 - **Missing leading slashes** - Express routes need `/api/health` not `api/health`
-- **Version mismatches** - AI-generated package.json may suggest non-existent versions
-- **Context switching** - Copilot suggestions vary based on file type and open tabs
+- **Test isolation** - Use factories for DB tests, endpoints for API tests
+- **Commit discipline** - Squash related commits before merging to master
 
 ### Workflow Discoveries:
-- **Manual F2 trigger** works better than auto-trigger for learning and control
-- **Clean up comments before commits** - aligns with coding philosophy of clear naming over comments
+- **Clean up comments before commits** - Clear naming over excessive comments
 - **curlapi alias** significantly improves API testing experience
 - **Small commits per milestone** keeps progress visible and recoverable
+- **Git rebase -i** for clean commit history
+- **Todo tracking** helps organize multi-step tasks
 
 ### Development Philosophy Applied:
 - **Small, focused functions** - each endpoint does one thing well
@@ -138,5 +151,5 @@ Web-based personal investment portfolio tracking application for family use, sup
 
 ---
 
-*Last Updated: September 6, 2025*  
-*Next Review: After Milestone 3 (Authentication)*
+*Last Updated: November 22, 2025*
+*Next Review: After Investment CRUD Implementation*
